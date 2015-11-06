@@ -1,7 +1,7 @@
 # vxlan_tool
 VXLAN Tool 
 
-Started with a copy of https://github.com/opendaylight/sfc/blob/master/sfc-test/nsh-tools/vxlan_tool.py
+Started with a copy of https://github.com/opendaylight/sfc/blob/master/sfc-test/nsh-tools/vxlan_tool.py written by Yi Yang, Reinaldo Penno
 
 Initially, this code was modified to
 * run with Python 2.7 and to swap the 
