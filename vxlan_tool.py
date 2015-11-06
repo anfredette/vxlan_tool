@@ -399,6 +399,8 @@ def main():
                         help='Specify the interface to listen')
     parser.add_argument('-d', '--do', choices=['dump', 'forward'],
                         help='dump/foward VxLAN/VxLAN-gpe + NSH packet')
+    parser.add_argument('-v', '--verbose', choices=['on', 'off'],
+                        help='dump packets when in forward mode')
     args = parser.parse_args()
     macaddr = None
 
@@ -420,6 +422,9 @@ def main():
     except OSError as e:
         print("{}".format(e) + " '%s'" % args.interface)
         sys.exit(-1)
+
+
+    do_print = ((args.do != "forward") or (args.verbose == "on"))
 
     # receive a packet
     pktnum=0
@@ -449,10 +454,12 @@ def main():
                 continue
 
         pktnum = pktnum + 1
-        print("\n\nPacket #%d" % pktnum)
+        if (do_print):
+            print("\n\nPacket #%d" % pktnum)
 
         """ Print ethernet header """
-        print("Eth Dst MAC: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, Src MAC: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, Ethertype: 0x%.4x" % (myethheader.dmac0, myethheader.dmac1, myethheader.dmac2, myethheader.dmac3, myethheader.dmac4, myethheader.dmac5, myethheader.smac0, myethheader.smac1, myethheader.smac2, myethheader.smac3, myethheader.smac4, myethheader.smac5, (myethheader.ethertype0<<8) | myethheader.ethertype1))
+        if (do_print):
+            print("Eth Dst MAC: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, Src MAC: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, Ethertype: 0x%.4x" % (myethheader.dmac0, myethheader.dmac1, myethheader.dmac2, myethheader.dmac3, myethheader.dmac4, myethheader.dmac5, myethheader.smac0, myethheader.smac1, myethheader.smac2, myethheader.smac3, myethheader.smac4, myethheader.smac5, (myethheader.ethertype0<<8) | myethheader.ethertype1))
 
         myipheader = IP4HEADER()
 
@@ -460,7 +467,8 @@ def main():
         decode_ip(packet, myipheader)
 
         """ Print IP header """
-        print("IP Version: %s IP Header Length: %s, TTL: %s, Protocol: %s, Src IP: %s, Dst IP: %s" % (myipheader.ip_ver, myipheader.ip_ihl, myipheader.ip_ttl, myipheader.ip_proto, str(socket.inet_ntoa(pack('!I', myipheader.ip_saddr))), str(socket.inet_ntoa(pack('!I', myipheader.ip_daddr)))))
+        if (do_print):
+            print("IP Version: %s IP Header Length: %s, TTL: %s, Protocol: %s, Src IP: %s, Dst IP: %s" % (myipheader.ip_ver, myipheader.ip_ihl, myipheader.ip_ttl, myipheader.ip_proto, str(socket.inet_ntoa(pack('!I', myipheader.ip_saddr))), str(socket.inet_ntoa(pack('!I', myipheader.ip_daddr)))))
 
         if (myipheader.ip_proto != 17):
             continue
@@ -471,7 +479,8 @@ def main():
         decode_udp(packet, myudpheader)
 
         """ Print UDP header """
-        print ("UDP Src Port: %s, Dst Port: %s, Length: %s, Checksum: %s" % (myudpheader.udp_sport, myudpheader.udp_dport, myudpheader.udp_len, myudpheader.udp_sum))
+        if (do_print):
+            print ("UDP Src Port: %s, Dst Port: %s, Length: %s, Checksum: %s" % (myudpheader.udp_sport, myudpheader.udp_dport, myudpheader.udp_len, myudpheader.udp_sum))
 
         if ((myudpheader.udp_dport != 4789) and (myudpheader.udp_dport != 4790) and (myudpheader.udp_dport != 6633)):
             continue
@@ -482,7 +491,8 @@ def main():
         decode_vxlan(packet, myvxlanheader)
 
         """ Print VxLAN/VxLAN-gpe header """
-        print("VxLAN/VxLAN-gpe VNI: %s, flags: %.2x, Next: %s" % (myvxlanheader.vni, myvxlanheader.flags, myvxlanheader.next_protocol))
+        if (do_print):
+            print("VxLAN/VxLAN-gpe VNI: %s, flags: %.2x, Next: %s" % (myvxlanheader.vni, myvxlanheader.flags, myvxlanheader.next_protocol))
 
         mynshbaseheader = BASEHEADER()
 
@@ -494,10 +504,12 @@ def main():
             decode_nsh_contextheader(packet, mynshcontextheader)
 
             """ Print NSH base header """
-            print("NSH base nsp: %s, nsi: %s" % (mynshbaseheader.service_path, mynshbaseheader.service_index))
+            if (do_print):
+                print("NSH base nsp: %s, nsi: %s" % (mynshbaseheader.service_path, mynshbaseheader.service_index))
 
             """ Print NSH context header """
-            print("NSH context c1: 0x%.8x, c2: 0x%.8x, c3: 0x%.8x, c4: 0x%.8x" % (mynshcontextheader.network_platform, mynshcontextheader.network_shared, mynshcontextheader.service_platform, mynshcontextheader.service_shared))
+            if (do_print):
+                print("NSH context c1: 0x%.8x, c2: 0x%.8x, c3: 0x%.8x, c4: 0x%.8x" % (mynshcontextheader.network_platform, mynshcontextheader.network_shared, mynshcontextheader.service_platform, mynshcontextheader.service_shared))
 
             if ((args.do == "forward") and (args.interface is not None) and (mynshbaseheader.service_index > 1)):
                 """ Build IP packet"""
