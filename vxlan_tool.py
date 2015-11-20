@@ -44,7 +44,7 @@ class VXLAN(Structure):
 
     def __init__(self, flags=int('00001000', 2), reserved=0, next_protocol=0,
                  vni=int('111111111111111111111111', 2), reserved2=0, *args, **kwargs):
-        # super().__init__(*args, **kwargs)
+        super(self.__class__, self).__init__(*args, **kwargs)
         self.flags = flags
         self.reserved = reserved
         self.next_protocol = next_protocol
@@ -109,7 +109,7 @@ class BASEHEADER(Structure):
 
     def __init__(self, service_path=1, service_index=255, version=NSH_VERSION1, flags=NSH_FLAG_ZERO,
                  length=NSH_TYPE1_LEN, md_type=NSH_MD_TYPE1, proto=NSH_NEXT_PROTO_ETH, *args, **kwargs):
-        # super().__init__(*args, **kwargs)
+        super(self.__class__, self).__init__(*args, **kwargs)
         self.version = version
         self.flags = flags
         self.length = length
@@ -138,7 +138,7 @@ class CONTEXTHEADER(Structure):
 
     def __init__(self, network_platform=0x00, network_shared=0x00, service_platform=0x00, service_shared=0x00, *args,
                  **kwargs):
-        # super().__init__(*args, **kwargs)
+        super(self.__class__, self).__init__(*args, **kwargs)
         self.network_platform = network_platform
         self.network_shared = network_shared
         self.service_platform = service_platform
