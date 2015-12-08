@@ -329,10 +329,8 @@ def build_ipv4_header(ip_tot_len, proto, src_ip, dest_ip):
     else:
         ip_saddr = socket.inet_aton(socket.gethostbyname(socket.gethostname()))
 
-    # ip_saddr = int.from_bytes(ip_saddr, byteorder='big')
     new_ip_daddr = int_from_bytes(ip_saddr)
     new_ip_saddr = socket.inet_aton(dest_ip)
-    # ip_daddr = int.from_bytes(ip_daddr, byteorder='big')
     new_ip_saddr = int_from_bytes(new_ip_saddr)
 
     ip_header = IP4HEADER(IP_HEADER_LEN, IPV4_VERSION, IPV4_TOS, ip_tot_len, IPV4_PACKET_ID, 0, IPV4_TTL, proto, 0, new_ip_saddr, new_ip_daddr)
@@ -426,6 +424,9 @@ def main():
 
     do_print = ((args.do != "forward") or (args.verbose == "on"))
 
+    vxlan_gpe_udp_ports = [4790, 6633]
+    vxlan_udp_ports = [4789] + vxlan_gpe_udp_ports
+
     # receive a packet
     pktnum=0
     while True:
@@ -482,7 +483,7 @@ def main():
         if (do_print):
             print ("UDP Src Port: %s, Dst Port: %s, Length: %s, Checksum: %s" % (myudpheader.udp_sport, myudpheader.udp_dport, myudpheader.udp_len, myudpheader.udp_sum))
 
-        if ((myudpheader.udp_dport != 4789) and (myudpheader.udp_dport != 4790) and (myudpheader.udp_dport != 6633)):
+        if (myudpheader.udp_dport not in vxlan_udp_ports):
             continue
 
         myvxlanheader = VXLAN()
@@ -499,7 +500,7 @@ def main():
         mynshcontextheader = CONTEXTHEADER()
 
         """ Print NSH header """
-        if ((myudpheader.udp_dport == 4790) or (myudpheader.udp_dport == 6633)):
+        if (myudpheader.udp_dport in vxlan_gpe_udp_ports):
             decode_nsh_baseheader(packet, mynshbaseheader)
             decode_nsh_contextheader(packet, mynshcontextheader)
 
@@ -513,7 +514,7 @@ def main():
 
             if ((args.do == "forward") and (args.interface is not None) and (mynshbaseheader.service_index > 1)):
                 """ Build IP packet"""
-                if ((myudpheader.udp_dport == 4790) or (myudpheader.udp_dport == 6633)):
+                if (myudpheader.udp_dport in vxlan_gpe_udp_ports):
                     """ nsi minus one """
                     mynshbaseheader.service_index = mynshbaseheader.service_index - 1
                     ippack = build_udp_packet(str(socket.inet_ntoa(pack('!I', myipheader.ip_saddr))), str(socket.inet_ntoa(pack('!I', myipheader.ip_daddr))), myudpheader.udp_sport, myudpheader.udp_dport, myvxlanheader.build() + mynshbaseheader.build() + mynshcontextheader.build() + packet[eth_length+ip_length+udp_length+vxlan_length+nshbase_length+nshcontext_length:])

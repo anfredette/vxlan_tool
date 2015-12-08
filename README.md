@@ -7,6 +7,7 @@ This code was modified to
 * run with Python 2.7
 * swap the IP SA and DA when forwarding.
 * Work for either UDP port 4790 or 6633
+* Don't forward NSH frames unless service index is > 1
 * Added verbose option to turn off prints when in forward mode
 
 Options:
